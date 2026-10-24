@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-10-24 (night 1 of the Oct 24 to 30 build window).
+Last updated: 2026-10-24 (night 2 of the Oct 24 to 30 build window).
 
 ## What works now
 
@@ -11,50 +11,59 @@ Last updated: 2026-10-24 (night 1 of the Oct 24 to 30 build window).
   promotion rule, logging every iteration as JSONL plus a self-contained HTML
   trajectory page.
 - Champion discipline: baseline is timed first; promotions are relative to a
-  real measurement; rejections carry reasons ("improved only 0.29%", "compile
-  failed", "correctness failed: ...").
+  real measurement; rejections carry reasons.
 - CPU pre-flight mirror (`kernloop preflight`): validates spec shapes, dtype
-  rounding, and tolerance on a Mac with no GPU (torch CPU if installed, pure
-  Python fallback with an order-independent cross-check).
+  rounding, and tolerance with no GPU.
 - Nemotron client (OpenAI-compatible, Token Factory endpoint, model via
-  `NEBIUS_MODEL`, retries with backoff, clean errors for missing key or
-  package) and the prompt template (spec + champion + benchmark profile,
-  code-only output contract).
-- Test suite: 37 tests, all passing on a Mac with no GPU, no Triton, no
-  network. Covers the loop end to end against the FakeJobBackend and a canned
-  LLM stub, promotion boundaries, JSONL validity, HTML rendering, and the
-  graceful `nebius` backend error.
+  `NEBIUS_MODEL`, backoff retries, clean missing-key errors) with an
+  engineering-grade prompt: spec + champion + profile + recent rejection
+  history, the knobs the model may change (block sizes, num_warps/num_stages,
+  split-K), forbidden patterns (host syncs, data-dependent branching,
+  contract changes), and the code-only output contract.
+- Real workload files (workloads/gemm_splitk/): naive tiled baseline, a
+  hand-written split-K two-phase reference kernel (the hidden target shape),
+  and a GPU checker (rel-L2 vs float32 torch reference, L2 flush before every
+  timed rep, mean + min, one parseable KERNLOOP_RESULT line).
+- Nebius Serverless Jobs backend (src/kernloop/nebius_jobs.py): full REST
+  implementation against the documented Jobs API (submit, poll, injected
+  files, result parsing, failure mapping), with injectable transport and log
+  runner so the whole flow is unit tested offline.
+- Test suite: 50 tests, all passing on a Mac with no GPU, no Triton, no
+  network.
 
-## What is stubbed (be honest with judges)
+## Tested live vs structurally complete (be honest with judges)
 
-- `NebiusJobBackend` (src/kernloop/nebius_jobs.py) is interface-only. It
-  fails fast with "not yet configured". No job packaging, no credential
-  handling, no result retrieval yet.
-- FakeJobBackend timings are synthetic, produced by a transparent feature
-  model of the candidate source. Every fake timing is labeled
-  `synthetic: true` in the run log; fake correctness is a heuristic, not an
-  executed reference check.
-- HeuristicLLM (the offline proposer) applies three staged mutations then
-  plateaus. It exists to exercise the loop mechanics, not to find real
-  speedups.
-- The v1 workload ships the naive tiled GEMM baseline and the split-K
-  two-phase target notes; the real split-K kernel files and the GPU-side
-  reference checker job are not written yet.
+- Tested live: nothing on Nebius. The owner has not finished signup, so no
+  credential has touched this code.
+- Structurally complete, unit tested offline: everything above, including
+  the Nebius REST backend (payload shape per docs.nebius.com/serverless,
+  submit/poll/parse against a fake transport, failure mapping).
+- Known unknowns, marked TODO(nebius) in the code: the exact job state enum
+  (we match defensively on status.state/status.phase), log retrieval shells
+  out to `nebius ai job logs` because the REST API exposes no logs endpoint,
+  and the job image is a CUDA devel placeholder that pip-installs torch and
+  triton at start instead of a pinned project image.
+
+## What is simulated
+
+- FakeJobBackend timings are synthetic (transparent feature model of the
+  candidate source), always labeled `synthetic: true`; its correctness check
+  is a heuristic, not an executed reference.
+- HeuristicLLM (offline proposer) applies three staged mutations then
+  plateaus; it exists to exercise loop mechanics, not to find real speedups.
 
 ## What remains before Oct 30, 10am PDT
 
-1. Nebius wiring (owner signup tonight): Token Factory account plus Nemotron
-   access (`NEBIUS_API_KEY`), Nebius AI Cloud credits, service account token
-   for Serverless Jobs. Then implement `NebiusJobBackend`: package (spec,
-   checker, candidate) into a job, run correctness plus timed reps with L2
-   flushes, return per-rep times.
-2. Real Triton workload files: the split-K two-phase kernel, the GPU-side
-   correctness checker (vs torch reference), and the benchmark driver with
-   cold-cache discipline, all inside the job image.
-3. A real Nemotron-driven run on a Nebius GPU, recorded: run log plus HTML
-   viewer output that the demo can serve or screenshot.
-4. Demo video (under 3 min) per the PRD narrative: spec, loop running,
-   trajectory chart improving, final kernel and speedup, generality close.
-5. Devpost submission: category, description, demo URL, video URL, repo URL
-   (public, MIT), feedback on Token Factory.
-6. Nice to have: seed a couple of example run logs in `runs/` for the demo.
+1. Owner Nebius signup (the blocker for everything below): Token Factory key
+   (`NEBIUS_API_KEY`), AI Cloud project plus IAM token
+   (`NEBIUS_IAM_TOKEN`, `NEBIUS_PROJECT_ID`).
+2. First live run of the Nebius backend: build and push a pinned job image
+   (torch + triton), confirm the state enum and the logs path, run one
+   candidate through `run_correctness` and `run_benchmark` for real.
+3. A full Nemotron-driven run on a Nebius GPU (`--backend nebius --llm
+   nemotron`): recorded run log plus HTML viewer for the demo.
+4. Demo video per SUBMISSION.md shot list (under 3 min).
+5. Devpost submission per SUBMISSION.md checklist (repo public, video URL,
+   demo URL, feedback paragraph).
+6. Nice to have: seed example run logs in `runs/`, second workload shape for
+   the generality close in the video.

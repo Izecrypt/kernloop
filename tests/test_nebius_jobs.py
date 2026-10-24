@@ -39,7 +39,8 @@ def test_get_backend_unknown():
         get_backend("nope")
 
 
-def test_get_backend_nebius_graceful_without_token(monkeypatch):
-    monkeypatch.delenv("NEBIUS_JOBS_TOKEN", raising=False)
+def test_get_backend_nebius_graceful_without_credentials(monkeypatch):
+    monkeypatch.delenv("NEBIUS_IAM_TOKEN", raising=False)
+    monkeypatch.delenv("NEBIUS_PROJECT_ID", raising=False)
     with pytest.raises(BackendConfigError, match="not yet configured"):
         get_backend("nebius")

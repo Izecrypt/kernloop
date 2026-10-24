@@ -102,6 +102,18 @@ class Orchestrator:
         )
         self._tokens = {"prompt": 0, "completion": 0}
 
+    def _failure_history(self, limit: int = 5) -> list[dict]:
+        """Recent rejection reasons, newest last, for the prompt's failure section."""
+
+        out = []
+        for rec in self.logger.iterations():
+            if not rec.get("decision", {}).get("promoted"):
+                out.append({
+                    "iteration": rec.get("iteration"),
+                    "reason": rec.get("decision", {}).get("reason", "rejected"),
+                })
+        return out[-limit:]
+
     def _profile(self, stats: TimingStats | None) -> str:
         if stats is None or stats.mean_ms is None:
             return (
@@ -119,7 +131,7 @@ class Orchestrator:
         return "\n".join(lines)
 
     def _run_iteration(self, i: int) -> None:
-        prompt = build_prompt(self.spec, self.champion.source, self._profile(self._champion_stats))
+        prompt = build_prompt(self.spec, self.champion.source, self._profile(self._champion_stats), self._failure_history())
         resp = self.llm.propose(prompt)
         self._tokens["prompt"] += resp.prompt_tokens
         self._tokens["completion"] += resp.completion_tokens
@@ -134,7 +146,7 @@ class Orchestrator:
         compile_res = CompileResult(ok=False, error=extract_err or "empty proposal")
         correctness: dict = {"ok": False, "error": "not run (compile failed)"}
         timing: dict = {"mean_ms": None, "min_ms": None, "reps": [], "reps_discarded_reason": None}
-        decision = Decision(promoted=False, reason="compile failed", threshold=self.threshold)
+        decision = Decision(promoted=False, reason=f"compile failed: {extract_err}", threshold=self.threshold)
 
         stats: TimingStats | None = None
         if source is not None:

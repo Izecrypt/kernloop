@@ -93,7 +93,9 @@ Real proposer once you have a Token Factory key (still simulated execution):
 kernloop run --spec examples/gemm_spec.json --budget 12 --backend fake --llm nemotron
 ```
 
-Real GPU execution is not wired up yet:
+Real GPU execution via Nebius Serverless Jobs is implemented
+(`src/kernloop/nebius_jobs.py`) but not yet run against live credentials; it
+needs `NEBIUS_IAM_TOKEN` and `NEBIUS_PROJECT_ID`:
 
 ```bash
 kernloop run --backend nebius   # errors with "not yet configured"

@@ -109,6 +109,7 @@ class WorkloadSpec:
     baseline_source: str
     target_notes: str
     correctness_rtol: float = 1e-2
+    workload_dir: str = "workloads/gemm_splitk"
 
     @property
     def problem_summary(self) -> str:
@@ -128,6 +129,20 @@ class WorkloadSpec:
     def load(path: str | Path) -> "WorkloadSpec":
         with Path(path).open("r", encoding="utf-8") as fh:
             return WorkloadSpec.from_dict(json.load(fh))
+
+    def workload_file(self, name: str) -> Path:
+        """Resolve a file inside the workload dir (checker, kernels).
+
+        Tries the path as given (repo checkout), then relative to the package
+        repo root, so it works from the repo and from the installed CLI.
+        """
+
+        repo_root = Path(__file__).resolve().parents[2]
+        for base in (Path.cwd(), repo_root):
+            candidate = base / self.workload_dir / name
+            if candidate.exists():
+                return candidate
+        raise FileNotFoundError(f"workload file {name!r} not found under {self.workload_dir!r}")
 
 
 def require_triton() -> None:

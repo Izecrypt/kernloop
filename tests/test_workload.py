@@ -46,3 +46,14 @@ def test_spec_load_from_dict_roundtrip(spec, tmp_path):
     p = tmp_path / "spec.json"
     p.write_text(json.dumps(dataclasses.asdict(spec)))
     assert WorkloadSpec.load(p) == spec
+
+
+def test_embedded_baseline_matches_workload_file(spec):
+    file_src = spec.workload_file("baseline_kernel.py").read_text()
+    assert spec.baseline_source in file_src
+
+
+def test_workload_checker_file_present(spec):
+    checker = spec.workload_file("gpu_checker.py").read_text()
+    assert "KERNLOOP_RESULT" in checker
+    assert "rel_l2" in checker or "_rel_l2" in checker

@@ -40,15 +40,45 @@ CURRENT CHAMPION KERNEL (the best variant so far, benchmark profile below):
 BENCHMARK PROFILE OF THE CURRENT CHAMPION:
 {profile}
 
+RECENT FAILURES (variants the harness rejected; do not repeat their mistakes):
+{failures}
+
 Propose ONE improved variant of the kernel for this exact problem.
+
+WHAT YOU MAY CHANGE:
+- BLOCK_M, BLOCK_N, BLOCK_K tile sizes (powers of two, 16 to 128).
+- num_warps and num_stages on kernel launches.
+- The grid decomposition, including a split-K two-phase structure (phase 1:
+  float32 partial products into a workspace, phase 2: reduction to bf16).
+- Masked loads and the K-loop structure.
+
+WHAT YOU MUST NOT DO:
+- Do not change the contract: `kernel_fn(a, b)` takes a (M, K) bfloat16 and
+  a (K, N) bfloat16 tensor and returns the (M, N) bfloat16 product.
+- No host-device syncs in the timed path: no `.item()`, `.cpu()`, `.tolist()`,
+  `print()` of tensors, or synchronizing copies inside kernel_fn.
+- No data-dependent branching on tensor values; control flow may only depend
+  on shapes and program ids.
+- No new Python dependencies; only torch, triton, and triton.language.
 
 STRICT OUTPUT REQUIREMENTS:
 - Output ONLY a complete, self-contained Python file.
 - The file must contain the Triton kernel(s) and a `kernel_fn(a, b)` entrypoint.
 - No prose, no markdown fences, no explanation, no commentary of any kind.
-- The file must pass a correctness check against a reference GEMM and then be
-  benchmarked, so it must be runnable as-is.
+- The file must pass a correctness check (rel-L2 vs a float32 torch reference,
+  tolerance {rtol}) and then be benchmarked, so it must be runnable as-is.
+- A variant is promoted only if its mean time beats the champion mean by more
+  than 2 percent, so prefer one solid, safe optimization over risky rewrites.
 """
+
+
+def _format_failures(failures: list[dict] | None) -> str:
+    if not failures:
+        return "(none so far)"
+    lines = []
+    for f in failures:
+        lines.append(f"- iteration {f.get('iteration')}: {f.get('reason')}")
+    return "\n".join(lines)
 
 
 @dataclass
@@ -67,11 +97,13 @@ class LLMClient(Protocol):
     def propose(self, prompt: str) -> LLMResponse: ...
 
 
-def build_prompt(spec, champion_source: str, profile: str) -> str:
+def build_prompt(spec, champion_source: str, profile: str, failures: list[dict] | None = None) -> str:
     return PROMPT_TEMPLATE.format(
         spec=spec.problem_summary + "\n\n" + spec.target_notes,
         champion=champion_source,
         profile=profile,
+        failures=_format_failures(failures),
+        rtol=spec.correctness_rtol,
     )
 
 

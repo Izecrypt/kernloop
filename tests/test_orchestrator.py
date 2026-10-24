@@ -86,6 +86,29 @@ def test_prompt_contains_required_context(spec, tmp_path):
     assert "No prose" in prompt
 
 
+def test_prompt_has_engineering_constraints_and_failure_history(spec, tmp_path):
+    improved = improved_kernel(spec.baseline_source)
+    orch, llm = make_orchestrator(
+        spec, tmp_path, [improved, "prose, no code", improved], budget=3
+    )
+    orch.run()
+    first, second, third = llm.prompts
+
+    # knobs the model may change
+    assert "BLOCK_M, BLOCK_N, BLOCK_K" in first
+    assert "num_warps and num_stages" in first
+    assert "split-K two-phase" in first
+    # forbidden patterns
+    assert ".item()" in first and ".cpu()" in first
+    assert "data-dependent branching" in first
+    assert "kernel_fn(a, b)" in first  # contract pinned
+    # first prompt has no failures yet
+    assert "(none so far)" in first
+    # later prompts carry the rejection history with reasons
+    assert "RECENT FAILURES" in second
+    assert "response is not a bare Python file" in third
+
+
 def test_extract_python_strictness():
     code = "import triton\n\ndef kernel_fn(a, b):\n    pass\n"
     assert extract_python(code)[0] == code.strip()
