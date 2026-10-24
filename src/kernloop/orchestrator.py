@@ -83,6 +83,7 @@ class Orchestrator:
         reps: int = 5,
         warmups: int = 2,
         threshold: float = PROMOTION_THRESHOLD,
+        researcher=None,
     ):
         if budget < 1:
             raise ValueError("budget must be >= 1")
@@ -94,6 +95,8 @@ class Orchestrator:
         self.reps = reps
         self.warmups = warmups
         self.threshold = threshold
+        self.researcher = researcher
+        self._consecutive_rejections = 0
         self.champion = Champion(
             source=spec.baseline_source,
             mean_ms=float("inf"),
@@ -101,6 +104,20 @@ class Orchestrator:
             iteration=0,
         )
         self._tokens = {"prompt": 0, "completion": 0}
+
+    def _research_notes(self) -> list:
+        if self.researcher is None:
+            return []
+        return self.researcher.notes_for_prompt()
+
+    def _track_rejection(self, record_reason: str | None) -> None:
+        """Count consecutive rejections; after 3, fire the recovery research query."""
+
+        if self.researcher is None:
+            return
+        note = self.researcher.recovery(record_reason or "rejected")
+        if note is not None:
+            self.logger.log_research(note)
 
     def _failure_history(self, limit: int = 5) -> list[dict]:
         """Recent rejection reasons, newest last, for the prompt's failure section."""
@@ -131,7 +148,13 @@ class Orchestrator:
         return "\n".join(lines)
 
     def _run_iteration(self, i: int) -> None:
-        prompt = build_prompt(self.spec, self.champion.source, self._profile(self._champion_stats), self._failure_history())
+        prompt = build_prompt(
+            self.spec,
+            self.champion.source,
+            self._profile(self._champion_stats),
+            self._failure_history(),
+            research=self._research_notes(),
+        )
         resp = self.llm.propose(prompt)
         self._tokens["prompt"] += resp.prompt_tokens
         self._tokens["completion"] += resp.completion_tokens
@@ -195,6 +218,17 @@ class Orchestrator:
         )
         self.logger.log_iteration(record)
 
+        # Rejection streak tracking drives the recovery research query:
+        # after 3 consecutive rejections, search for help based on the
+        # latest reason. A promotion resets the streak.
+        if decision.promoted:
+            self._consecutive_rejections = 0
+        else:
+            self._consecutive_rejections += 1
+            if self._consecutive_rejections == 3:
+                self._track_rejection(decision.reason)
+                self._consecutive_rejections = 0
+
     _champion_stats: TimingStats | None = None
 
     def run(self) -> RunSummary:
@@ -209,6 +243,12 @@ class Orchestrator:
             iteration=0,
         )
         self._champion_stats = baseline_stats
+
+        # Run-start research query, cached for the whole run and logged.
+        if self.researcher is not None:
+            note = self.researcher.initial(self.spec)
+            if note is not None:
+                self.logger.log_research(note)
 
         for i in range(1, self.budget + 1):
             self._run_iteration(i)

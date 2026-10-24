@@ -150,7 +150,7 @@ def render_log_to_html(log_path: str | Path, out_path: str | Path) -> Path:
         first = json.loads(fh.readline())
     run_id = first.get("run_id", path.stem)
     backend = first.get("backend", "unknown")
-    records = read_log(path)
+    records = [r for r in read_log(path) if "iteration" in r]
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(render_html(records, run_id, backend), encoding="utf-8")

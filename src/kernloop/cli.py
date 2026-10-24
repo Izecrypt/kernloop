@@ -12,6 +12,7 @@ from .harness import PROMOTION_THRESHOLD
 from .nemotron_client import LLMConfigError, get_llm
 from .nebius_jobs import BackendConfigError, get_backend
 from .orchestrator import Orchestrator
+from .research import research_enabled
 from .runlog import RunLogger, summarize
 from .viewer import render_log_to_html
 from .workload import cpu_mirror_check
@@ -38,6 +39,14 @@ def _cmd_run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
+    researcher = None
+    if research_enabled(args.research):
+        from .research import Researcher
+
+        researcher = Researcher()
+        if not researcher.client.configured:
+            print("warning: --research set but TAVILY_API_KEY is missing; continuing without research")
+
     preflight = cpu_mirror_check(spec)
     if not preflight["ok"]:
         print(f"error: CPU pre-flight mirror check failed: {preflight}", file=sys.stderr)
@@ -54,10 +63,11 @@ def _cmd_run(args: argparse.Namespace) -> int:
         reps=args.reps,
         warmups=args.warmups,
         threshold=PROMOTION_THRESHOLD,
+        researcher=researcher,
     )
     print(
         f"run {run_id}: budget={args.budget} backend={args.backend} llm={llm.model} "
-        f"reps={args.reps} warmups={args.warmups}"
+        f"reps={args.reps} warmups={args.warmups} research={'on' if researcher else 'off'}"
     )
     summary = orchestrator.run()
 
@@ -105,6 +115,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--seed", type=int, default=0, help="rng seed for the fake backend and offline proposer")
     run.add_argument("--out", default="runs", help="output directory for run log and HTML viewer")
     run.add_argument("--run-id", default=None, help="run id (default: random)")
+    run.add_argument(
+        "--research",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="enable Tavily research context (default: off; or KERNLOOP_RESEARCH=1)",
+    )
     run.set_defaults(func=_cmd_run)
 
     view = sub.add_parser("view", help="render a run log to a self-contained HTML trajectory page")

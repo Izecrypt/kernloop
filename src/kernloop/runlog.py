@@ -69,6 +69,19 @@ class RunLogger:
         with self.path.open("a", encoding="utf-8") as fh:
             fh.write(record.to_line() + "\n")
 
+    def log_research(self, note) -> None:
+        """Append a research record (Tavily query + snippets) to the run log."""
+
+        line = {
+            "type": "research",
+            "run_id": self.run_id,
+            "timestamp": time.time(),
+            "backend": self.backend,
+            **note.to_dict(),
+        }
+        with self.path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(line, sort_keys=True) + "\n")
+
     def header(self) -> dict[str, Any]:
         with self.path.open("r", encoding="utf-8") as fh:
             first = json.loads(fh.readline())
@@ -84,7 +97,7 @@ class RunLogger:
                 if not line:
                     continue
                 rec = json.loads(line)
-                if rec.get("type") == "run_header":
+                if "iteration" not in rec:  # header, research, or future event lines
                     continue
                 rec["_lineno"] = lineno
                 out.append(rec)

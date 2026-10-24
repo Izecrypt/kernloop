@@ -50,6 +50,7 @@ cover/
 venv/
 ENV/
 env/
+.env
 
 # Editors and OS
 .idea/
