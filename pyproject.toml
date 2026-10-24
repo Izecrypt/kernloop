@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kernloop"
+version = "0.1.0"
+description = "Autonomous GPU kernel engineer: an agent loop that writes, validates, and benchmarks Triton kernels on Nebius AI Cloud."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+llm = ["openai>=1.30"]
+test = ["pytest>=8.0"]
+all = ["openai>=1.30", "pytest>=8.0"]
+
+[project.scripts]
+kernloop = "kernloop.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
