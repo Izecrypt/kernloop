@@ -10,7 +10,7 @@ due Oct 30, 10am PDT. Fill the bracketed items as they land.
   kernels, Nebius GPUs grade them, and only statistically real speedups
   become champion.
 - **Track:** Coding and Agentic Engineering
-- **Repo:** [GitHub URL, public, MIT]
+- **Repo:** https://github.com/Izecrypt/kernloop (public, MIT)
 - **Demo:** [URL of the HTML trajectory viewer for a real run, or recorded]
 - **Video:** [YouTube URL, under 3 minutes]
 
