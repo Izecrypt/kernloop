@@ -73,8 +73,10 @@ For the real Nemotron proposer (OpenAI-compatible client):
 
 ```bash
 pip install -e '.[llm,test]'
-export NEBIUS_API_KEY=...          # from the Nebius Token Factory console
+export NEBIUS_API_KEY=...          # Token Factory console, or any OpenAI-compatible key
+export NEBIUS_BASE_URL=...         # optional, defaults to the Token Factory endpoint
 export NEBIUS_MODEL=...            # optional, overrides the default model
+export KERNLOOP_NO_THINKING=1      # optional, disable thinking on reasoning-style Nemotron
 ```
 
 ## How to run

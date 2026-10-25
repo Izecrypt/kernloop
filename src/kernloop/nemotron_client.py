@@ -13,6 +13,11 @@ Two implementations share one protocol:
   presented as Nemotron output.
 
 Model name is configurable via the NEBIUS_MODEL environment variable.
+Reasoning-style Nemotron models (e.g. nemotron-3.5-lightning) burn their
+output budget on reasoning traces before emitting code, which can stall the
+loop; KERNLOOP_NO_THINKING=1 sends chat_template_kwargs enable_thinking
+False to disable thinking for endpoints that honor it (NVIDIA's hosted API
+does; unsupported endpoints ignore it).
 """
 
 from __future__ import annotations
@@ -170,6 +175,11 @@ class NemotronClient:
             ) from exc
         self._openai = openai
         self._client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=timeout_s)
+        self._extra_body = (
+            {"chat_template_kwargs": {"enable_thinking": False}}
+            if os.environ.get("KERNLOOP_NO_THINKING") == "1"
+            else None
+        )
 
     def propose(self, prompt: str) -> LLMResponse:
         transient = (self._openai.APIConnectionError, self._openai.APITimeoutError, self._openai.RateLimitError)
@@ -185,6 +195,7 @@ class NemotronClient:
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.7,
+                    extra_body=self._extra_body,
                 )
                 latency = time.monotonic() - started
                 text = resp.choices[0].message.content or ""
