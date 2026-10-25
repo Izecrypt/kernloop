@@ -38,9 +38,10 @@ Last updated: 2026-10-25 (night 3 of the Oct 24 to 30 build window).
 
 ## Tested live vs structurally complete (be honest with judges)
 
-- Tested live: nothing on Nebius, and no live Tavily call yet (free key
-  pending; the call path is unit tested against a fake transport). The owner
-  has not finished signup, so no credential has touched this code.
+- Tested live: the Tavily research step against the real API on Oct 25
+  (query + snippets logged in run 4a766fd42d18). Nothing on Nebius yet:
+  the owner's card was rejected at billing setup (Stripe, $25 first payment
+  required), so no Nebius credential has touched this code.
 - Structurally complete, unit tested offline: everything above, including
   the Nebius REST backend (payload shape per docs.nebius.com/serverless,
   submit/poll/parse against a fake transport, failure mapping).
