@@ -45,10 +45,13 @@ Last updated: 2026-10-25 (night 3 of the Oct 24 to 30 build window).
   the Nebius REST backend (payload shape per docs.nebius.com/serverless,
   submit/poll/parse against a fake transport, failure mapping).
 - Known unknowns, marked TODO(nebius) in the code: the exact job state enum
-  (we match defensively on status.state/status.phase), log retrieval shells
-  out to `nebius ai job logs` because the REST API exposes no logs endpoint,
-  and the job image is a CUDA devel placeholder that pip-installs torch and
-  triton at start instead of a pinned project image.
+  is not enumerated in the docs, so we match defensively on status.state /
+  status.phase (the docs do confirm `COMPLETED` as the success status, which
+  is now in the terminal set). Log retrieval shells out to
+  `nebius ai job logs` because the docs confirm logs are console/CLI only
+  (no REST logs endpoint), and the job image is a CUDA devel placeholder
+  that pip-installs torch and triton at start instead of a pinned project
+  image.
 
 ## What is simulated
 

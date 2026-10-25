@@ -201,11 +201,12 @@ CHECKER_CONTAINER_PATH = "/opt/kernloop/gpu_checker.py"
 CANDIDATE_CONTAINER_PATH = "/opt/kernloop/candidate.py"
 MAX_INJECTED_FILE_BYTES = 64 * 1024  # per Nebius docs
 
-# Job states observed in status.state / status.phase. Defensive matching
-# because the docs list the fields but not the exact enum values.
+# Job states observed in status.state / status.phase. The docs confirm
+# `COMPLETED` as the success status and canceling for the rest, but do not
+# enumerate the full enum, so match defensively.
 # TODO(nebius): confirm the exact state enum against a live job.
-_TERMINAL_STATES = {"SUCCEEDED", "FAILED", "CANCELLED", "ERROR"}
-_FAILURE_STATES = {"FAILED", "ERROR"}
+_TERMINAL_STATES = {"SUCCEEDED", "COMPLETED", "FAILED", "ERROR", "CANCELLED", "CANCELED"}
+_FAILURE_STATES = {"FAILED", "ERROR", "CANCELLED", "CANCELED"}
 
 
 class JobExecutionError(RuntimeError):
