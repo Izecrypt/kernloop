@@ -383,7 +383,7 @@ class NebiusJobBackend:
     # -- protocol --------------------------------------------------------------
 
     def _run_job(self, spec: WorkloadSpec, source: str, mode: str, reps: int, warmups: int) -> dict:
-        checker = spec.workload_file("gpu_checker.py").read_text(encoding="utf-8")
+        checker = spec.checker_path().read_text(encoding="utf-8")
         payload = self.build_job_payload(
             job_name=f"kernloop-{spec.name}-{mode}",
             files={CHECKER_CONTAINER_PATH: checker, CANDIDATE_CONTAINER_PATH: source},

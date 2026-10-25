@@ -144,6 +144,18 @@ class WorkloadSpec:
                 return candidate
         raise FileNotFoundError(f"workload file {name!r} not found under {self.workload_dir!r}")
 
+    def checker_path(self) -> Path:
+        """Resolve the GPU checker. Workloads may share the generic checker
+        from workloads/gemm_splitk instead of shipping their own copy."""
+
+        try:
+            return self.workload_file("gpu_checker.py")
+        except FileNotFoundError:
+            shared = Path(__file__).resolve().parents[2] / "workloads/gemm_splitk/gpu_checker.py"
+            if shared.exists():
+                return shared
+            raise
+
 
 def require_triton() -> None:
     if not HAS_TRITON:
@@ -256,4 +268,39 @@ def default_spec() -> WorkloadSpec:
         dtype="bfloat16",
         baseline_source=NAIVE_TILED_GEMM,
         target_notes=SPLIT_K_TARGET_NOTES,
+    )
+
+
+DECODE_BASELINE_GEMM = 'import torch\nimport triton\nimport triton.language as tl\n\n\n@triton.jit\ndef _decode_gemm_kernel(\n    a_ptr, b_ptr, c_ptr,\n    M, N, K,\n    stride_am, stride_ak,\n    stride_bk, stride_bn,\n    stride_cm, stride_cn,\n    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,\n):\n    pid_n = tl.program_id(0)\n    offs_m = tl.arange(0, BLOCK_M)\n    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)\n    offs_k = tl.arange(0, BLOCK_K)\n    a_ptrs = a_ptr + offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak\n    b_ptrs = b_ptr + offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn\n    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)\n    for k in range(0, tl.cdiv(K, BLOCK_K)):\n        a = tl.load(a_ptrs, mask=offs_m[:, None] < M, other=0.0)\n        b = tl.load(b_ptrs)\n        acc = tl.dot(a, b, acc)\n        a_ptrs += BLOCK_K * stride_ak\n        b_ptrs += BLOCK_K * stride_bk\n    c = acc.to(tl.bfloat16)\n    c_ptrs = c_ptr + offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn\n    tl.store(c_ptrs, c, mask=offs_m[:, None] < M)\n\n\ndef kernel_fn(a, b):\n    """Skinny-M GEMM: C = A @ B, all bf16. a is (M, K), b is (K, N)."""\n    M, K = a.shape\n    K2, N = b.shape\n    assert K == K2\n    c = torch.empty((M, N), device=a.device, dtype=torch.bfloat16)\n    BLOCK_M, BLOCK_N, BLOCK_K = 16, 128, 64\n    grid = (triton.cdiv(N, BLOCK_N),)\n    _decode_gemm_kernel[grid](\n        a, b, c, M, N, K,\n        a.stride(0), a.stride(1),\n        b.stride(0), b.stride(1),\n        c.stride(0), c.stride(1),\n        BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,\n    )\n    return c\n'
+
+
+DECODE_TARGET_NOTES = """\
+Optimization target: split-K two-phase GEMM in Triton for a skinny-M decode
+shape. The grid of the naive kernel (one program per N tile) is far too small
+to fill the GPU when M is tiny, so the K dimension must be split: phase 1
+computes float32 partial products per K-chunk into a workspace, phase 2
+reduces partials and emits bf16. Pick SPLIT_K so that
+(N / BLOCK_N) * SPLIT_K roughly matches the SM count, keep BLOCK_M at 16
+(tl.dot minimum), mask the M tail, and watch workspace size: SPLIT_K * M * N
+float32 must fit comfortably in HBM. The entrypoint must remain
+kernel_fn(a, b) -> c with a (M, K) bf16 and b (K, N) bf16.
+"""
+
+
+def decode_spec() -> WorkloadSpec:
+    return WorkloadSpec(
+        name="bf16_decode_gemm_splitk",
+        description=(
+            "Decode projection GEMM (LLM decode shape): M is a handful of tokens, "
+            "N and K are large. The naive kernel runs one block per N tile, so "
+            "the grid has too few blocks to fill the SMs; split-K multiplies the "
+            "grid and is the standard fix on this shape."
+        ),
+        M=16,
+        N=4096,
+        K=14336,
+        dtype="bfloat16",
+        baseline_source=DECODE_BASELINE_GEMM,
+        target_notes=DECODE_TARGET_NOTES,
+        workload_dir="workloads/gemm_decode",
     )
