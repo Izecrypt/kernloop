@@ -93,6 +93,12 @@ Real proposer once you have a Token Factory key (still simulated execution):
 kernloop run --spec examples/gemm_spec.json --budget 12 --backend fake --llm nemotron
 ```
 
+Optional research mode (Tavily): with `TAVILY_API_KEY` set, pass `--research`
+(or `KERNLOOP_RESEARCH=1`) and the loop runs a Tavily search at run start and
+again after 3 consecutive rejections, feeding fresh Triton optimization notes
+into the Nemotron prompt so the proposer gets unstuck instead of repeating a
+failed direction.
+
 Real GPU execution via Nebius Serverless Jobs is implemented
 (`src/kernloop/nebius_jobs.py`) but not yet run against live credentials; it
 needs `NEBIUS_IAM_TOKEN` and `NEBIUS_PROJECT_ID`:
@@ -125,6 +131,10 @@ and HTML rendering. No GPU, no Triton, no network required.
   Serverless Jobs (the `nebius` backend; see STATUS.md for wiring status).
   The `fake` backend is a deterministic local simulator used for development
   and tests, and every fake timing is labeled `synthetic` in the run log.
+- Research: optional **Tavily search step** (`research.py`) that grounds the
+  proposer in current Triton optimization notes at run start and after
+  repeated rejections (submitted for the Best Use of Tavily prize; every
+  research call is logged in the run log).
 - Honesty note: run log entries record which backend and which model produced
   each number, so real GPU results and simulated ones are never confused.
 

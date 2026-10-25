@@ -47,12 +47,15 @@ changes). `nebius_jobs.py` implements the Serverless Jobs backend: the
 candidate file and the GPU checker are injected into the job, the checker
 prints one parseable result line, and the backend maps every failure mode
 (job failed, no result line, timeout) to a clean error the loop logs.
-`runlog.py` and `viewer.py` turn the run into an inspectable artifact.
+`research.py` optionally calls the Tavily search API at run start and after 3
+consecutive rejections, injecting fresh optimization notes into the prompt
+when the proposer is stuck. `runlog.py` and `viewer.py` turn the run into an
+inspectable artifact.
 
 **What is real vs simulated, as of submission.** Be precise with judges:
 (1) The agent loop, promotion rule, run log, HTML viewer, prompt pipeline,
-and Nebius Serverless Jobs REST backend are implemented and unit tested (50
-tests, all passing, no GPU required for the suite). (2) The v1 workload is a
+Tavily research step, and Nebius Serverless Jobs REST backend are implemented
+and unit tested (63 tests, all passing, no GPU required for the suite). (2) The v1 workload is a
 bf16 projection GEMM with a naive tiled baseline and a hand-written split-K
 two-phase reference kernel; the GPU checker enforces rel-L2 correctness and
 cold-cache timing. (3) The recorded demo run executes the full loop with the
@@ -90,6 +93,7 @@ mechanism) would close that cleanly.
 | Public repo, MIT license | [GitHub URL], LICENSE at root |
 | README with setup and run instructions | README.md |
 | Uses Nemotron via Nebius Token Factory | `nemotron_client.py`, README "Built for" section |
+| Functional Tavily API call at runtime (Best Use of Tavily prize) | `research.py`, `--research` flag or `KERNLOOP_RESEARCH=1`, calls logged in the run log |
 | Benchmarks on Nebius AI Cloud | `nebius_jobs.py` (Serverless Jobs REST), demo run log with `backend: nebius` entries [or honest note if the live run did not land] |
 | Working demo | [trajectory HTML URL] from a real or clearly-labeled simulated run |
 | 3 min video | [YouTube URL], shot list below |

@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-10-24 (night 2 of the Oct 24 to 30 build window).
+Last updated: 2026-10-25 (night 3 of the Oct 24 to 30 build window).
 
 ## What works now
 
@@ -28,13 +28,19 @@ Last updated: 2026-10-24 (night 2 of the Oct 24 to 30 build window).
   implementation against the documented Jobs API (submit, poll, injected
   files, result parsing, failure mapping), with injectable transport and log
   runner so the whole flow is unit tested offline.
-- Test suite: 50 tests, all passing on a Mac with no GPU, no Triton, no
+- Test suite: 63 tests, all passing on a Mac with no GPU, no Triton, no
   network.
+- Tavily research step (`research.py`, `cli.py --research` / `KERNLOOP_RESEARCH=1`):
+  live search at run start and after 3 consecutive rejections, results injected
+  into the Nemotron prompt; runs as a no-op with a warning when
+  `TAVILY_API_KEY` is missing; unit tested offline with a fake transport.
+  Submitted for the Best Use of Tavily prize.
 
 ## Tested live vs structurally complete (be honest with judges)
 
-- Tested live: nothing on Nebius. The owner has not finished signup, so no
-  credential has touched this code.
+- Tested live: nothing on Nebius, and no live Tavily call yet (free key
+  pending; the call path is unit tested against a fake transport). The owner
+  has not finished signup, so no credential has touched this code.
 - Structurally complete, unit tested offline: everything above, including
   the Nebius REST backend (payload shape per docs.nebius.com/serverless,
   submit/poll/parse against a fake transport, failure mapping).
@@ -56,7 +62,8 @@ Last updated: 2026-10-24 (night 2 of the Oct 24 to 30 build window).
 
 1. Owner Nebius signup (the blocker for everything below): Token Factory key
    (`NEBIUS_API_KEY`), AI Cloud project plus IAM token
-   (`NEBIUS_IAM_TOKEN`, `NEBIUS_PROJECT_ID`).
+   (`NEBIUS_IAM_TOKEN`, `NEBIUS_PROJECT_ID`), and a free Tavily key
+   (`TAVILY_API_KEY`, no card needed) for research mode.
 2. First live run of the Nebius backend: build and push a pinned job image
    (torch + triton), confirm the state enum and the logs path, run one
    candidate through `run_correctness` and `run_benchmark` for real.
