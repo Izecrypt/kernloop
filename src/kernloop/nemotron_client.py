@@ -24,7 +24,10 @@ from dataclasses import dataclass
 from typing import Protocol
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
-DEFAULT_MODEL = "nvidia/nemotron-3-nano-30b-a3b"
+# nvidia/nemotron-3-nano-30b-a3b reached end of life on NVIDIA's API on
+# 2026-09-01; keep the default to a model that resolves on both NVIDIA's
+# hosted API and Token Factory.
+DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
 PROMPT_TEMPLATE = """\
 You are an expert GPU kernel engineer optimizing a Triton kernel for an NVIDIA H100.
