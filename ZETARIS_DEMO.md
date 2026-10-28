@@ -1,88 +1,59 @@
 # Zetaris Demo Challenge plan (add-on prize, separate from the Nebius x NVIDIA submission)
 
-Status date: 2026-10-28. Video due Oct 29, 23:45 UTC. Requirement: short demo
-of the build with Zetaris working live, including 40 to 60 seconds on why it
-is amazing. Honesty rule: the video must show Zetaris genuinely querying real
-KernLoop run-log data from /Users/tbo/kernloop/runs, never mocked data.
+Status date: 2026-10-28 (evening): LOCAL STACK LIVE, ALL FIVE QUERIES REHEARSED.
+Video due Oct 29, 23:45 UTC. Requirement: short demo of the build with Zetaris
+working live, including 40 to 60 seconds on why it is amazing. Honesty rule:
+the video shows Zetaris genuinely querying real KernLoop run-log data from
+/Users/tbo/kernloop/runs, never mocked data.
 
-## 1. Access status
+## 1. Access status: UNBLOCKED (local docker path, owner completed 2026-10-28)
 
-Blocked at the Zetaris Cloud login, and only at that step.
+- Platform running at http://localhost:3000 (login admin@zetaris.com, password
+  in /Users/tbo/zetaris-platform/.env as ZETARIS_ADMIN_PASSWORD).
+- Installed at /Users/tbo/zetaris-platform (registry login done; images pulled;
+  verify.sh passes except bootstrap sample-data load, which is irrelevant).
+- Docker note: Docker.raw had ballooned to 228GB on a full disk and corrupted
+  itself; deleted and recreated (owner approved; w3life-db dev container lost,
+  logged in vault). Rosetta confirmed working (preflight warning is cosmetic).
 
-- Login URL: https://cloud.enterprise.zetaris.com/login
-- Account: tobiobembeofficial@gmail.com (auto-provisioned by the hackathon).
-- The login form is email only; the API flow is `auth/login/start` then
-  `auth/login/otp/send` and `auth/login/otp/verify`. The OTP is emailed to
-  the Gmail above. No password option is offered for this account.
-- I probed the API directly. Every unauthenticated endpoint
-  (`/api/auth/methods`, `/api/auth/login/start`) returns 401 `Unauthorized`
-  even with full browser headers, so the OTP email cannot be triggered
-  from here. A browser session would face the same email gate.
-- The local Docker path is confirmed real and documented (Zetaris blog and
-  the getting-started repo): after login, the console shows registry
-  credentials, and a "Run locally" flow yields `zetaris-platform.zip` with
-  `preflight.sh`, `docker compose`, and `verify.sh`. The old public
-  `zetaris/Freemium` compose file references images
-  (`zetaris/lightning-server:v2.4.1.0-latest`) whose registry now requires
-  the cloud login, so there is no way around the OTP.
+### Working SQL execution path (headless, same path the UI uses)
 
-What the owner must do (about 10 minutes):
+- Login: POST http://localhost:3000/api/auth/login {username, password} ->
+  response carries idToken and orgId.
+- Run any SQL (DDL + SELECT): POST http://localhost:3000/api/proxy/sql-editor/sqls/run
+  with headers Authorization: Bearer <idToken>, X-Org-ID: <orgId>,
+  X-Request-ID: <uuid>, body {"queryId": <fresh uuid>, "sql": "...", "source": "SqlEditor",
+  "chunkSize": 10000}. Returns {"headers", "data", "total", "timeUsed"}.
+- Helper script used for rehearsal: /tmp/zsql.py (recreate if gone).
+- The /api/proxy/query/sql/start endpoint is SELECT-only; DDL must go through
+  the sql-editor endpoint above.
 
-1. Open https://cloud.enterprise.zetaris.com/login, enter
-   tobiobembeofficial@gmail.com, and submit.
-2. Open the Gmail inbox, copy the 6 digit OTP from the Zetaris email, paste
-   it, and complete login.
-3. If the console offers "Mini template cluster" versus "Run locally",
-   choose **Run locally** (no AWS account needed).
-4. On the local setup screen, copy the two registry credential lines and
-   paste them into a Terminal here (they run `docker login ...`; expect
-   "Login Succeeded").
-5. Download `zetaris-platform.zip` and move it to /Users/tbo (macOS blocks
-   Terminal reads of ~/Downloads).
-6. Tell me it is done (or run: `cd /Users/tbo && [ -d zetaris-platform ] ||
-   unzip -q zetaris-platform.zip && cd zetaris-platform && ./preflight.sh
-   && docker compose pull && docker compose up -d && ./verify.sh`).
+### Filestore quirk discovered during rehearsal (important)
 
-Alternative if the owner prefers to finish by hand: after step 2, in the
-console choose "Run locally", follow the on-screen steps (Docker Desktop
-8 GB RAM and 4 CPUs, registry login, unzip, preflight, compose up), then
-confirm the gateway answers at http://localhost:3000. I take over from
-there: staging the run logs, registering the source, and rehearsing queries.
+- Lightning Filestore FORMAT JSON reads exactly ONE record per file (it treats
+  each file as a single JSON document). Multi-line JSONL files yield only the
+  first record. Options multiLine / directory paths / globs do not change this.
+- Working setup: the 21 iteration records were copied VERBATIM (unmodified
+  rows, filtered subset) into one file per record:
+  host /Users/tbo/kernloop/runs-iters-flat/*.json ->
+  container /home/zetaris/customer-data/shared/kernloop-flat (docker compose cp).
+- Setup SQL (live on camera):
+  CREATE LIGHTNING DATABASE kernloop;
+  CREATE LIGHTNING FILESTORE TABLE iterations FROM kernloop FORMAT JSON OPTIONS
+    (path '/home/zetaris/customer-data/shared/kernloop-flat');
+  SELECT COUNT(*) FROM kernloop.iterations;  -- expect 21
+- Honesty note for the video: state that rows are verbatim copies of the real
+  run logs, staged one record per file because of how the filestore reads JSON.
 
-If the OTP email never arrives, the account may need activation from a
-provisioning email in that same inbox; click its activation link first.
+## 2. Connector: Lightning Filestore FORMAT JSON (confirmed working)
 
-## 2. Connector answer (design question)
+As designed below, with the quirk above. Original design notes follow.
 
-Zetaris can register the run-log directory as a queryable source, and the
-right connector is the **Lightning Filestore** with **FORMAT JSON**, no
-JDBC or REST shim needed:
-
-```sql
-CREATE LIGHTNING DATABASE kernloop;
-CREATE LIGHTNING FILESTORE TABLE iterations FROM kernloop FORMAT JSON OPTIONS (
-  path "/home/zetaris/data/shared/kernloop-runs/*.runlog.jsonl"
-);
-```
-
-- `CREATE LIGHTNING FILESTORE TABLE ... FORMAT JSON` registers files or
-  directories with schema inferred from the data (confirmed in Zetaris
-  getting-started docs, Lightning SQL commands, section 5.3). JSON, CSV,
-  Parquet, and more are supported; Spark JSON reads line-delimited records,
-  which matches JSONL.
-- Local files must live under the container shared root (the compose file
-  bind-mounts `customer_data` at `/home/zetaris/data`), so tomorrow's wiring
-  either mounts /Users/tbo/kernloop/runs there or copies `*.runlog.jsonl`
-  into the shared dir (copy of real files only, no transformation, so the
-  honesty rule holds).
-- The runs directory also contains `.html` viewer files; the path glob
-  `*.runlog.jsonl` excludes them.
-- Alternative connectors if the file path fights us: S3 via
-  `path "s3a://..."` with `awsAccessKeyId`/`awsSecretAccessKey` options, or
-  `CREATE FILESTORE SESSION TABLE` for one-shot ad-hoc queries.
-- Known wrinkle: the log mixes record shapes (run header lines, iteration
-  records, research records). Spark unions the inferred schema, so non-
-  iteration lines get nulls; queries filter `WHERE iteration IS NOT NULL`.
+- `CREATE LIGHTNING FILESTORE TABLE ... FORMAT JSON` registers files with
+  schema inferred from data (Zetaris getting-started docs 5.3).
+- Local files must live under the container shared root (bind-mounted
+  customer-data volume at /home/zetaris/customer-data); driver env sets
+  ZETARIS_LOCAL_FILE_SYTEM_ROOT_PATH=/home/zetaris/customer-data/shared.
 
 ## 3. Demo story (SQL over real run logs)
 
