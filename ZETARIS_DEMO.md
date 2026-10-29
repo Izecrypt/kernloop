@@ -142,3 +142,26 @@ type the queries themselves.
 
 Not in scope tonight: recording, editing, any change to the Nebius x NVIDIA
 submission, and any repo commit beyond this plan document.
+
+## 5. Zetaris Demo Challenge addendum (official rules, Oct 28 email)
+
+Deadline is Tuesday Nov 3 (Dropbox upload, not a form). File name: IZECUBE_DDMMYY.
+
+Judging is out of 100: meaningful Zetaris use 25, how it helped you 15,
+problem and impact 15, technical execution 15, working with SpaceXSI coding
+agents 15, creativity 10, video quality 5.
+
+Two gaps vs the old script:
+
+1. SpaceXSI segment (15 pts). After Q5, open Cursor (or the terminal) and
+   show a coding agent running one of the demo queries through the JDBC
+   driver (`/tmp/zsql.py` path or the Cursor JDBC prompt from the Zetaris
+   getting-started doc). One sentence on camera: the agent writes SQL
+   against the audit data and Zetaris answers, so the loop from build to
+   verify stays inside the agent workspace.
+2. The 40 to 60s "why it was amazing" close is now scored (15 pts), not
+   optional. Keep the honest simulated-data flag in it.
+
+One-line write-up for the entry form: "Zetaris turned my agent's 21 kernel
+iterations into a table I could interrogate with plain SQL, and the moment
+it clicked was writing one JOIN that explained the entire speedup story."
