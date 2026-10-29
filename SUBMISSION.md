@@ -12,7 +12,7 @@ due Oct 30, 10am PDT. Fill the bracketed items as they land.
 - **Track:** Coding and Agentic Engineering
 - **Repo:** https://github.com/Izecrypt/kernloop (public, MIT)
 - **Demo:** https://izecrypt.github.io/kernloop/ (hosted trajectory viewer for run 8d267696a355, the run in the video)
-- **Video:** rendered at /Users/tbo/Desktop/kernloop-demo-nebius.mp4 (82s, under 3 min); needs a public YouTube upload, then paste the URL here
+- **Video:** https://youtu.be/EIW93LhhhO0 (82s, public/unlisted YouTube upload of /Users/tbo/Desktop/kernloop-demo-nebius.mp4)
 
 ## Description (for judges)
 
