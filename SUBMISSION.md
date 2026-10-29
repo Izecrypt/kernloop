@@ -11,8 +11,8 @@ due Oct 30, 10am PDT. Fill the bracketed items as they land.
   become champion.
 - **Track:** Coding and Agentic Engineering
 - **Repo:** https://github.com/Izecrypt/kernloop (public, MIT)
-- **Demo:** [URL of the HTML trajectory viewer for a real run, or recorded]
-- **Video:** [YouTube URL, under 3 minutes]
+- **Demo:** https://izecrypt.github.io/kernloop/ (hosted trajectory viewer for run 8d267696a355, the run in the video)
+- **Video:** rendered at /Users/tbo/Desktop/kernloop-demo-nebius.mp4 (82s, under 3 min); needs a public YouTube upload, then paste the URL here
 
 ## Description (for judges)
 
@@ -29,7 +29,6 @@ only if its mean beats the champion mean by more than 2 percent, otherwise
 it is rejected with the reason logged. The loop repeats within a fixed
 budget and writes an append-only JSONL run log plus a self-contained HTML
 trajectory page a human can inspect.
-
 **Why.** Kernel optimization is the hardest real codebase class to hand an
 agent: correctness is exacting, speedups are measured in microseconds, and a
 wrong answer that is fast is worthless. The interesting agentic engineering
@@ -55,15 +54,20 @@ inspectable artifact.
 **What is real vs simulated, as of submission.** Be precise with judges:
 (1) The agent loop, promotion rule, run log, HTML viewer, prompt pipeline,
 Tavily research step, and Nebius Serverless Jobs REST backend are implemented
-and unit tested (63 tests, all passing, no GPU required for the suite). (2) The v1 workload is a
+and unit tested (70 tests, all passing, no GPU required for the suite). (2) The v1 workload is a
 bf16 projection GEMM with a naive tiled baseline and a hand-written split-K
 two-phase reference kernel; the GPU checker enforces rel-L2 correctness and
 cold-cache timing. (3) The recorded demo run executes the full loop with the
 fake backend (a deterministic feature-model simulator, clearly labeled
-synthetic in every log line) because [owner: keep this sentence accurate,
-e.g. "GPU job quota was pending at recording time" or replace with the real
-run]. Every run log records which backend and which model produced each
-number, so real and simulated results are never mixed.
+synthetic in every log line); the LLM proposals in that run are real, from
+NVIDIA Nemotron via the NVIDIA API, and the Tavily research calls are real
+API calls. The Nebius path (Token Factory endpoint plus AI Cloud Serverless
+Jobs) is fully implemented in the repo and documented in the README, but no
+live Nebius job had run at submission time because account billing could not
+be activated from our region during the hackathon window. Every run log
+records which backend and which model produced each number, so real and
+simulated results are never mixed, and the Devpost can be updated with a
+live Nebius run during judging.
 
 **Origin story (two lines).** The founder competes on the OKC (Open Kernel
 Challenge) leaderboard and has written split-K two-phase GEMMs by hand for
@@ -90,13 +94,13 @@ mechanism) would close that cleanly.
 | Devpost requirement | Where it is satisfied |
 |---|---|
 | Built during Aug 26 to Oct 30 window | Repo created Oct 24, 2026; git history shows it |
-| Public repo, MIT license | [GitHub URL], LICENSE at root |
+| Public repo, MIT license | https://github.com/Izecrypt/kernloop, LICENSE at root |
 | README with setup and run instructions | README.md |
 | Uses Nemotron via Nebius Token Factory | `nemotron_client.py`, README "Built for" section |
 | Functional Tavily API call at runtime (Best Use of Tavily prize) | `research.py`, `--research` flag or `KERNLOOP_RESEARCH=1`, calls logged in the run log |
-| Benchmarks on Nebius AI Cloud | `nebius_jobs.py` (Serverless Jobs REST), demo run log with `backend: nebius` entries [or honest note if the live run did not land] |
-| Working demo | [trajectory HTML URL] from a real or clearly-labeled simulated run |
-| 3 min video | [YouTube URL], shot list below |
+| Benchmarks on Nebius AI Cloud | `nebius_jobs.py` (Serverless Jobs REST); demo run used the labeled-synthetic backend, Nebius path implemented and documented, live run pending billing activation (stated plainly in the description) |
+| Working demo | https://izecrypt.github.io/kernloop/ (trajectory viewer for the run in the video) |
+| 3 min video | /Users/tbo/Desktop/kernloop-demo-nebius.mp4 (82s), YouTube upload pending |
 | Category, description, demo/video/repo URLs | This file |
 | Feedback on Token Factory | Paragraph above |
 
