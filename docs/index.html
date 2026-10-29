@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>KernLoop trajectory 8d267696a355</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 2rem auto; max-width: 1000px; color: #222; }
+h1 { font-size: 1.4rem; } .meta { color: #555; font-size: 0.95rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin-top: 1.5rem; }
+td, th { border: 1px solid #ddd; padding: 4px 8px; text-align: left; }
+tr.promoted td { background: #e6f4ea; } tr.failed td { background: #fce8e6; }
+.legend span { margin-right: 1rem; font-size: 0.85rem; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 5px; margin-right: 4px; }
+</style>
+</head>
+<body>
+<h1>KernLoop trajectory</h1>
+<p class="meta">run <code>8d267696a355</code> | backend <b>fake</b> | iterations 6 | promotions 1 | best mean 75.449 ms</p>
+<p class="legend"><span><span class="dot" style="background:#188038"></span>promoted</span><span><span class="dot" style="background:#e8710a"></span>rejected (no real improvement)</span><span><span class="dot" style="background:#d93025"></span>failed compile or correctness</span><span style="color:#1a73e8">champion line</span></p>
+<svg viewBox="0 0 960 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KernLoop trajectory">
+<line x1="80" y1="390" x2="930" y2="390" stroke="#444"/>
+<line x1="80" y1="40" x2="80" y2="390" stroke="#444"/>
+<line x1="80" y1="390.0" x2="930" y2="390.0" stroke="#e5e5e5"/>
+<text x="72" y="394.0" text-anchor="end" font-size="11" fill="#555">75.3</text>
+<line x1="80" y1="302.5" x2="930" y2="302.5" stroke="#e5e5e5"/>
+<text x="72" y="306.5" text-anchor="end" font-size="11" fill="#555">75.6</text>
+<line x1="80" y1="215.0" x2="930" y2="215.0" stroke="#e5e5e5"/>
+<text x="72" y="219.0" text-anchor="end" font-size="11" fill="#555">75.8</text>
+<line x1="80" y1="127.5" x2="930" y2="127.5" stroke="#e5e5e5"/>
+<text x="72" y="131.5" text-anchor="end" font-size="11" fill="#555">76.1</text>
+<line x1="80" y1="40.0" x2="930" y2="40.0" stroke="#e5e5e5"/>
+<text x="72" y="44.0" text-anchor="end" font-size="11" fill="#555">76.4</text>
+<text x="165.0" y="408" text-anchor="middle" font-size="11" fill="#555">2</text>
+<text x="335.0" y="408" text-anchor="middle" font-size="11" fill="#555">3</text>
+<text x="505.0" y="408" text-anchor="middle" font-size="11" fill="#555">4</text>
+<text x="675.0" y="408" text-anchor="middle" font-size="11" fill="#555">5</text>
+<text x="845.0" y="408" text-anchor="middle" font-size="11" fill="#555">6</text>
+<text x="480.0" y="442" text-anchor="middle" font-size="13" fill="#333">iteration</text>
+<text x="18" y="230.0" text-anchor="middle" font-size="13" fill="#333" transform="rotate(-90 18 230.0)">kernel mean time (ms)</text>
+<path d="M165.0,80.4 L335.0,80.4 L335.0,80.4 L505.0,80.4 L505.0,80.4 L675.0,80.4 L675.0,80.4 L845.0,80.4 L845.0,80.4" fill="none" stroke="#1a73e8" stroke-width="2"/>
+<text x="926" y="72.4" text-anchor="end" font-size="11" fill="#1a73e8">champion</text>
+<circle cx="165.0" cy="80.4" r="6" fill="#188038"><title>iter 2: mean 76.2476 ms | PROMOTED: mean improved 40.44% (&amp;gt; 2% threshold) | nvidia/nemotron-3.5-lightning-30b-a3b</title></circle>
+<circle cx="335.0" cy="204.0" r="6" fill="#e8710a"><title>iter 3: mean 75.8809 ms | rejected: mean improved only 0.48% (needs &amp;gt; 2%) | nvidia/nemotron-3.5-lightning-30b-a3b</title></circle>
+<circle cx="505.0" cy="80.4" r="6" fill="#e8710a"><title>iter 4: mean 76.2476 ms | rejected: mean improved only 0.00% (needs &amp;gt; 2%) | nvidia/nemotron-3.5-lightning-30b-a3b</title></circle>
+<circle cx="675.0" cy="349.6" r="6" fill="#e8710a"><title>iter 5: mean 75.4487 ms | rejected: mean improved only 1.05% (needs &amp;gt; 2%) | nvidia/nemotron-3.5-lightning-30b-a3b</title></circle>
+<circle cx="845.0" cy="80.4" r="6" fill="#e8710a"><title>iter 6: mean 76.2476 ms | rejected: mean improved only 0.00% (needs &amp;gt; 2%) | nvidia/nemotron-3.5-lightning-30b-a3b</title></circle>
+</svg>
+<table><thead><tr><th>iter</th><th>mean ms</th><th>min ms</th><th>decision</th><th>reason</th><th>model</th></tr></thead>
+<tbody>
+<tr class='failed'><td>1</td><td>n/a</td><td>n/a</td><td>rejected</td><td>compile failed: response contains prose around the code fence</td><td>nvidia/nemotron-3.5-lightning-30b-a3b</td></tr><tr class='promoted'><td>2</td><td>76.248</td><td>74.725</td><td>PROMOTED</td><td>mean improved 40.44% (&gt; 2% threshold)</td><td>nvidia/nemotron-3.5-lightning-30b-a3b</td></tr><tr class='rejected'><td>3</td><td>75.881</td><td>74.057</td><td>rejected</td><td>mean improved only 0.48% (needs &gt; 2%)</td><td>nvidia/nemotron-3.5-lightning-30b-a3b</td></tr><tr class='rejected'><td>4</td><td>76.248</td><td>74.725</td><td>rejected</td><td>mean improved only 0.00% (needs &gt; 2%)</td><td>nvidia/nemotron-3.5-lightning-30b-a3b</td></tr><tr class='rejected'><td>5</td><td>75.449</td><td>73.530</td><td>rejected</td><td>mean improved only 1.05% (needs &gt; 2%)</td><td>nvidia/nemotron-3.5-lightning-30b-a3b</td></tr><tr class='rejected'><td>6</td><td>76.248</td><td>74.725</td><td>rejected</td><td>mean improved only 0.00% (needs &gt; 2%)</td><td>nvidia/nemotron-3.5-lightning-30b-a3b</td></tr>
+</tbody></table>
+</body>
+</html>
